@@ -1,10 +1,11 @@
 {
   "name": "yt-dlp-wrapper-server",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "API REST para converter vídeos do YouTube em MP3 usando yt-dlp via child_process",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ./yt-dlp && chmod +x ./yt-dlp"
   },
   "dependencies": {
     "express": "^4.18.2"
