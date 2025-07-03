@@ -1,22 +1,30 @@
 const express = require('express');
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const app = express();
+const port = process.env.PORT || 3000;
+const apiKey = process.env.API_KEY;
 
 app.use(express.json());
 
 app.post('/download-audio', (req, res) => {
   const { url } = req.body;
-  const apiKey = req.headers['x-api-key'];
-  if (!url || apiKey !== process.env.API_KEY) {
-    return res.status(403).send({ error: 'Forbidden or missing URL' });
+  const reqApiKey = req.header('x-api-key');
+  if (!reqApiKey || reqApiKey !== apiKey) {
+    return res.status(403).send('Forbidden: Invalid API Key');
+  }
+  if (!url) {
+    return res.status(400).send('Bad Request: URL is required');
   }
 
-  const cmd = `yt-dlp -x --audio-format mp3 -o - "${url}"`;
-  const proc = exec(cmd, { encoding: 'binary', maxBuffer: Infinity });
-
+  const ytdlp = spawn('yt-dlp', ['-x', '--audio-format', 'mp3', url, '-o', '-']);
   res.setHeader('Content-Type', 'audio/mpeg');
-  proc.stdout.pipe(res);
-  proc.stderr.on('data', (data) => console.error(data.toString()));
+  ytdlp.stdout.pipe(res);
+  ytdlp.stderr.on('data', data => console.error(`stderr: ${data}`));
+  ytdlp.on('close', code => {
+    if (code !== 0) console.error(`yt-dlp process exited with code ${code}`);
+  });
 });
 
-app.listen(3000, () => console.log('yt-dlp wrapper server running on port 3000'));
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});
